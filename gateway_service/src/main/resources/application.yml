@@ -2,6 +2,12 @@ spring:
   cloud:
     gateway:
       routes:
+        - id: oauth-service
+          uri: http://localhost:9100
+          predicates:
+          - Path=/api/security/oauthserver
+          filters:
+          - StripPrefix=3
         - id: user-service
           uri: http://localhost:8002  # URL de tu microservicio de usuarios
           predicates:
@@ -15,6 +21,32 @@ spring:
             - Path=/api/roles/**  # Ruta que se redirige a este servicio
           # filters:
           #   - StripPrefix=1  # Elimina el prefijo del path
+
+
+  security:
+    oauth2:
+      resourceserver:
+          jwt:
+            issuer-uri: http://127.0.0.1:9001
+      client:
+        registration:
+          app-client:
+              provider: spring
+              client-id: gateway-client
+              client-secret: 12345
+              authorization-grant-type: authorization_code
+              redirect-uri: http://127.0.0.1:8090/authorized
+              scope:
+              - openid
+              - profile
+              client-name: app-client
+        provider:
+          spring:
+            issuer-uri: http://127.0.0.1:9001
+          
+              
+                
+
 
 management:
   endpoints:

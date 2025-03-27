@@ -6,6 +6,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -22,9 +23,12 @@ public class UserServiceImpl implements UserService {
 
     private final RoleFeignClient roleFeignClient;
 
-    public UserServiceImpl(UserRepository repository, RoleFeignClient roleFeignClient) {
+    private PasswordEncoder passwordEncoder;
+
+    public UserServiceImpl(UserRepository repository, RoleFeignClient roleFeignClient,PasswordEncoder passwordEncoder) {
         this.repository = repository;
         this.roleFeignClient = roleFeignClient;
+        this.passwordEncoder = passwordEncoder;
     }
 
     @Transactional(readOnly = true)
@@ -64,7 +68,8 @@ public class UserServiceImpl implements UserService {
 public User save(UserDto userDto) {
     User user = new User();
     user.setUsername(userDto.getUsername());
-    user.setPassword(userDto.getPassword());
+    user.setPassword(passwordEncoder.encode(userDto.getPassword()));
+    user.setEnabled(true);
 
     // Verificar si roles es null y asignar un conjunto vacío en caso de serlo
     Set<Long> roleIds = Optional.ofNullable(userDto.getRoles())

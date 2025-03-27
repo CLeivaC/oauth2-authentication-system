@@ -19,7 +19,8 @@
             "mainClass": "com.christian.userservice.user_service.UserServiceApplication",
             "projectName": "user-service",
             "args": "",
-            "envFile": "${workspaceFolder}/.env"
+            "envFile": "${workspaceFolder}/.env",
+            "vmArgs": " -Dcom.sun.management.jmxremote -Dcom.sun.management.jmxremote.port=54178 -Dcom.sun.management.jmxremote.authenticate=false -Dcom.sun.management.jmxremote.ssl=false -Dspring.jmx.enabled=true -Djava.rmi.server.hostname=localhost -Dspring.application.admin.enabled=true -Dspring.boot.project.name=user-service"
         },
         {
             "type": "java",
@@ -28,6 +29,16 @@
             "cwd": "${workspaceFolder}",
             "mainClass": "com.christian.gatewayservice.gateway_service.GatewayServiceApplication",
             "projectName": "gateway_service",
+            "args": "",
+            "envFile": "${workspaceFolder}/.env"
+        },
+        {
+            "type": "java",
+            "name": "Spring Boot-OauthServiceApplication<oauth_service>",
+            "request": "launch",
+            "cwd": "${workspaceFolder}",
+            "mainClass": "com.christian.oauthservice.oauth_service.OauthServiceApplication",
+            "projectName": "oauth_service",
             "args": "",
             "envFile": "${workspaceFolder}/.env"
         }
