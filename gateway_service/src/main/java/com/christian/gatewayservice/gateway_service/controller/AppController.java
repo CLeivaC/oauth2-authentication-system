@@ -23,7 +23,7 @@ public class AppController {
 
     @PostMapping("/logout")
     public Map<String,String> logout(){
-        return Collections.singletonMap("logut", "ok");
+        return Collections.singletonMap("logout", "ok");
     }
     
 

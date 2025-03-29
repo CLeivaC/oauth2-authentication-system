@@ -9,7 +9,7 @@ import com.christian.userservice.user_service.dto.RoleDto;
 @FeignClient(name = "role-service", url = "http://localhost:8005/api/roles")
 public interface RoleFeignClient {
 
-    @GetMapping("/{name}")
+    @GetMapping("/name/{name}")
     RoleDto getRoleByName(@PathVariable String name);
 
 }

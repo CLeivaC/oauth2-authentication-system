@@ -25,7 +25,8 @@ public class UserServiceImpl implements UserService {
 
     private PasswordEncoder passwordEncoder;
 
-    public UserServiceImpl(UserRepository repository, RoleFeignClient roleFeignClient,PasswordEncoder passwordEncoder) {
+    public UserServiceImpl(UserRepository repository, RoleFeignClient roleFeignClient,
+            PasswordEncoder passwordEncoder) {
         this.repository = repository;
         this.roleFeignClient = roleFeignClient;
         this.passwordEncoder = passwordEncoder;
@@ -64,28 +65,27 @@ public class UserServiceImpl implements UserService {
     }
 
     @Transactional
-@Override
-public User save(UserDto userDto) {
-    User user = new User();
-    user.setUsername(userDto.getUsername());
-    user.setPassword(passwordEncoder.encode(userDto.getPassword()));
-    user.setEnabled(true);
+    @Override
+    public User save(UserDto userDto) {
+        User user = new User();
+        user.setUsername(userDto.getUsername());
+        user.setPassword(passwordEncoder.encode(userDto.getPassword()));
+        user.setEnabled(true);
 
-    // Verificar si roles es null y asignar un conjunto vacío en caso de serlo
-    Set<Long> roleIds = Optional.ofNullable(userDto.getRoles())
-            .orElse(new HashSet<>()) // Si roles es null, asignar un conjunto vacío
-            .stream()
-            .map(roleName -> {
-                // Llamada al FeignClient para obtener el role por nombre
-                RoleDto role = roleFeignClient.getRoleByName(roleName);
-                return role.getId();
-            })
-            .collect(Collectors.toSet());
+        // Check if roles is null and assign an empty set if it is
+        Set<Long> roleIds = Optional.ofNullable(userDto.getRoles())
+                .orElse(new HashSet<>())
+                .stream()
+                .map(roleName -> {
+                    // Call FeignClient to get the role by name
+                    RoleDto role = roleFeignClient.getRoleByName(roleName);
+                    return role.getId();
+                })
+                .collect(Collectors.toSet());
 
-    user.setRoleIds(roleIds);
+        user.setRoleIds(roleIds);
 
-    return repository.save(user);
-}
-
+        return repository.save(user);
+    }
 
 }

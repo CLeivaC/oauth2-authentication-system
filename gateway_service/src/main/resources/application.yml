@@ -1,52 +1,47 @@
+server:
+  port: 8090
 spring:
+  application:
+    name: gateway_service
+
   cloud:
     gateway:
       routes:
         - id: oauth-service
-          uri: http://localhost:9100
+          uri: http://localhost:9001
           predicates:
-          - Path=/api/security/oauthserver
+            - Path=/api/security/oauthserver
           filters:
-          - StripPrefix=3
+            - StripPrefix=3
         - id: user-service
-          uri: http://localhost:8002  # URL de tu microservicio de usuarios
+          uri: http://localhost:8002
           predicates:
-            - Path=/api/users/**  # Ruta que se redirige a este servicio
-          # filters:
-          #   - StripPrefix=1  # Elimina el prefijo del path
-
+            - Path=/api/users/**
         - id: role-service
-          uri: http://localhost:8005  # URL de tu microservicio de productos
+          uri: http://localhost:8005
           predicates:
-            - Path=/api/roles/**  # Ruta que se redirige a este servicio
-          # filters:
-          #   - StripPrefix=1  # Elimina el prefijo del path
-
+            - Path=/api/roles/**
 
   security:
     oauth2:
       resourceserver:
-          jwt:
-            issuer-uri: http://127.0.0.1:9001
+        jwt:
+          issuer-uri: http://127.0.0.1:9001
       client:
         registration:
           app-client:
-              provider: spring
-              client-id: gateway-client
-              client-secret: 12345
-              authorization-grant-type: authorization_code
-              redirect-uri: http://127.0.0.1:8090/authorized
-              scope:
+            provider: spring
+            client-id: gateway-client
+            client-secret: 12345
+            authorization-grant-type: authorization_code
+            redirect-uri: http://127.0.0.1:8090/authorized
+            scope:
               - openid
               - profile
-              client-name: app-client
+            client-name: app-client
         provider:
           spring:
             issuer-uri: http://127.0.0.1:9001
-          
-              
-                
-
 
 management:
   endpoints:
