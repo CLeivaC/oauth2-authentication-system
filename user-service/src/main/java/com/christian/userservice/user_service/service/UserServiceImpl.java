@@ -13,7 +13,9 @@ import org.springframework.transaction.annotation.Transactional;
 import com.christian.userservice.user_service.clients.RoleFeignClient;
 import com.christian.userservice.user_service.dto.RoleDto;
 import com.christian.userservice.user_service.dto.UserDto;
+import com.christian.userservice.user_service.dto.UserResponseDto;
 import com.christian.userservice.user_service.entities.User;
+import com.christian.userservice.user_service.exceptions.custom.UsernameNotFoundException;
 import com.christian.userservice.user_service.repositories.UserRepository;
 
 @Service
@@ -34,8 +36,16 @@ public class UserServiceImpl implements UserService {
 
     @Transactional(readOnly = true)
     @Override
-    public List<User> findAll() {
-        return (List<User>) repository.findAll();
+    public List<UserResponseDto> findAll() {
+
+        List<User> users = (List<User>) repository.findAll();
+
+        List<UserResponseDto> usersResponse = users.stream()
+                .map(user -> new UserResponseDto(user.getId(), user.getUsername(), user.getRoleIds(),
+                        user.getEnabled()))
+                .collect(Collectors.toList());
+
+        return usersResponse;
     }
 
     @Transactional(readOnly = true)
@@ -46,8 +56,10 @@ public class UserServiceImpl implements UserService {
 
     @Transactional(readOnly = true)
     @Override
-    public Optional<User> findByUsername(String username) {
-        return repository.findByUsername(username);
+    public User findByUsername(String username) {
+        return repository.findByUsername(username)
+                .orElseThrow(
+                        () -> new UsernameNotFoundException("Usuario con username '" + username + "' no encontrado"));
     }
 
     @Transactional
@@ -82,7 +94,10 @@ public class UserServiceImpl implements UserService {
                     return role.getId();
                 })
                 .collect(Collectors.toSet());
-
+        // Ensure the "ROLE_USER" role is included
+        Long userRoleId = roleFeignClient.getRoleByName("ROLE_USER").getId();
+        roleIds.add(userRoleId); // Add the "ROLE_USER" role if not already present
+        
         user.setRoleIds(roleIds);
 
         return repository.save(user);

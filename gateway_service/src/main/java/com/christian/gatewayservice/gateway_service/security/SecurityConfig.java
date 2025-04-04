@@ -24,30 +24,33 @@ import java.util.stream.Collectors;
 public class SecurityConfig {
 
     @Bean
-    SecurityWebFilterChain securityWebFilterChain(ServerHttpSecurity http) throws Exception{
-        return http.authorizeExchange(authz ->{
-            authz.pathMatchers("/authorized","/logout").permitAll()
-                 .pathMatchers(HttpMethod.GET, "/api/users").permitAll()
-                 .anyExchange().authenticated(); 
+    SecurityWebFilterChain securityWebFilterChain(ServerHttpSecurity http) throws Exception {
+        return http.authorizeExchange(authz -> {
+            authz.pathMatchers("/authorized", "/logout").permitAll()
+                    .pathMatchers(HttpMethod.GET, "/api/users").hasAuthority("USER")
+                    .pathMatchers(HttpMethod.GET, "/api/users/username/{username}")
+                    .hasAnyAuthority("ROLE_OAUTH_SERVICE")
+                    .pathMatchers(HttpMethod.POST,"/api/users").hasAuthority("ADMIN")
+                    .anyExchange().authenticated();
         }).cors(csrf -> csrf.disable())
-        .securityContextRepository(NoOpServerSecurityContextRepository.getInstance())
-            .oauth2Login(withDefaults())
-            .oauth2Client(withDefaults())
-            .oauth2ResourceServer(oauth2 -> oauth2.jwt(
-                jwt -> jwt.jwtAuthenticationConverter(new Converter<Jwt,Mono<AbstractAuthenticationToken>>(){
+                .securityContextRepository(NoOpServerSecurityContextRepository.getInstance())
+                .oauth2Login(withDefaults())
+                .oauth2Client(withDefaults())
+                .oauth2ResourceServer(oauth2 -> oauth2.jwt(
+                        jwt -> jwt.jwtAuthenticationConverter(new Converter<Jwt, Mono<AbstractAuthenticationToken>>() {
 
-                    @Override
-                    public Mono<AbstractAuthenticationToken> convert(Jwt source) {
-                        Collection<String> roles = source.getClaimAsStringList("roles");
-                        Collection<GrantedAuthority> authorities = roles.stream()
-                        .map(SimpleGrantedAuthority::new)
-                        .collect(Collectors.toList());
+                            @Override
+                            public Mono<AbstractAuthenticationToken> convert(Jwt source) {
+                                Collection<String> roles = source.getClaimAsStringList("roles");
+                                Collection<GrantedAuthority> authorities = roles.stream()
+                                        .map(SimpleGrantedAuthority::new)
+                                        .collect(Collectors.toList());
 
-                        return Mono.just(new JwtAuthenticationToken(source,authorities));
-                    }
+                                return Mono.just(new JwtAuthenticationToken(source, authorities));
+                            }
 
-            })))
-            .build();
+                        })))
+                .build();
     }
 
 }

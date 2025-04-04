@@ -5,7 +5,6 @@ import java.security.KeyPairGenerator;
 import java.security.interfaces.RSAPrivateKey;
 import java.security.interfaces.RSAPublicKey;
 import java.time.Duration;
-import java.util.Collections;
 import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -48,7 +47,7 @@ import org.springframework.security.web.util.matcher.MediaTypeRequestMatcher;
 public class SecurityConfig {
 
     @Autowired
-	private PasswordEncoder passwordEncoder;
+    private PasswordEncoder passwordEncoder;
 
     @Bean
     @Order(1)
@@ -106,7 +105,7 @@ public class SecurityConfig {
                         .builder()
                         .accessTokenTimeToLive(Duration.ofHours(2))
                         .refreshTokenTimeToLive(Duration.ofDays(1))
-                .build())
+                        .build())
                 .clientSettings(ClientSettings.builder().requireAuthorizationConsent(false).build())
                 .build();
 
@@ -149,14 +148,21 @@ public class SecurityConfig {
     }
 
     @Bean
-    public OAuth2TokenCustomizer<JwtEncodingContext> jwAuth2TokenCustomizer(){
-        return (context) ->{
-            if(OAuth2TokenType.ACCESS_TOKEN.getValue().equals(context.getTokenType().getValue())){
-                context.getClaims().claims((claims) ->{
+    OAuth2TokenCustomizer<JwtEncodingContext> jwAuth2TokenCustomizer() {
+        return (context) -> {
+            if (OAuth2TokenType.ACCESS_TOKEN.getValue().equals(context.getTokenType().getValue())) {
+                context.getClaims().claims((claims) -> {
                     Set<String> roles = AuthorityUtils.authorityListToSet(context.getPrincipal().getAuthorities())
-                        .stream()
-                        .map(role -> role.replaceFirst("ROLE_", ""))
-                        .collect(Collectors.collectingAndThen(Collectors.toSet(),Collections::unmodifiableSet));
+                            .stream()
+                            .map(role -> role.replaceFirst("ROLE_", ""))
+                            .collect(Collectors.toSet());
+
+                    // Only add the ROLE_OAUTH_SERVICE role if the principal is the OAuth client
+                    if ("gateway-client".equals(context.getPrincipal().getName())) {
+                        roles.add("ROLE_OAUTH_SERVICE");
+                    }
+
+                    
                     claims.put("roles", roles);
                 });
             }

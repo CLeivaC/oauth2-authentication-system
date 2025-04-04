@@ -1,5 +1,6 @@
 package com.christian.oauthservice.oauth_service.services;
 
+import java.util.Base64;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -7,6 +8,11 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import javax.crypto.Mac;
+import javax.crypto.spec.SecretKeySpec;
+
+// import org.slf4j.Logger;
+// import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.MediaType;
@@ -35,6 +41,22 @@ public class UserService implements UserDetailsService {
         this.webClientRoles = webClientRoles;
     }
 
+    private static final String SECRET_KEY = System.getenv("SECRET_KEY");
+
+    // private static final Logger logger =
+    // LoggerFactory.getLogger(UserService.class);
+
+    // // Verificar si la clave secreta está obtenida correctamente
+    // static {
+    // if (SECRET_KEY == null || SECRET_KEY.isEmpty()) {
+    // logger.error("La clave secreta no está configurada correctamente.");
+    // } else {
+    // logger.info("La clave secreta ha sido obtenida correctamente.");
+    // }
+    // }
+
+
+
     @Override
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
         Map<String, String> params = new HashMap<>();
@@ -44,6 +66,7 @@ public class UserService implements UserDetailsService {
             // Get the user
             User user = webClientUsers.build().get().uri("/username/{username}", params)
                     .accept(MediaType.APPLICATION_JSON)
+                    .header("X-Internal-Secret", generateSignature("oauth-service"))
                     .retrieve()
                     .bodyToMono(User.class)
                     .block();
@@ -60,8 +83,7 @@ public class UserService implements UserDetailsService {
             // Get the IDs of the roles the user has
             Set<Long> roleIds = new HashSet<>(user.getRoleIds());
 
-
-            // make the request to WebClient to obtain the roles using the roleIds 
+            // make the request to WebClient to obtain the roles using the roleIds
             List<Role> roles = webClientRoles.build().get()
                     .uri(uriBuilder -> uriBuilder.path("/ids")
                             .queryParam("ids",
@@ -78,7 +100,7 @@ public class UserService implements UserDetailsService {
                 throw new RuntimeException("Roles not found for user: " + username);
             }
 
-            //Converts roles to GrantedAuthority to Spring Security
+            // Converts roles to GrantedAuthority to Spring Security
             List<SimpleGrantedAuthority> authorities = roles.stream()
                     .map(role -> new SimpleGrantedAuthority(role.getName()))
                     .collect(Collectors.toList());
@@ -94,5 +116,16 @@ public class UserService implements UserDetailsService {
                     e);
         }
     }
+
+        // generate the HMAC-SHA256 signature
+        private String generateSignature(String serviceName) {
+            try {
+                Mac mac = Mac.getInstance("HmacSHA256");
+                mac.init(new SecretKeySpec(SECRET_KEY.getBytes(), "HmacSHA256"));
+                return Base64.getEncoder().encodeToString(mac.doFinal(serviceName.getBytes()));
+            } catch (Exception e) {
+                throw new RuntimeException("Error al generar la firma", e);
+            }
+        }
 
 }
